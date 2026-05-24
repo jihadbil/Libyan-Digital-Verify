@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { citizensApi, institutionsApi, verificationApi, auditApi } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/lib/auth-context";
 import { formatDateTime, userTypeLabels } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

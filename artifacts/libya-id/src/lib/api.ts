@@ -1,4 +1,13 @@
-const API_BASE = "https://localhost:7071";
+const DEFAULT_API_BASE = "http://localhost:7071";
+
+export function getApiBase(): string {
+  return localStorage.getItem("api_base_url") || DEFAULT_API_BASE;
+}
+
+export function setApiBase(url: string) {
+  const normalized = url.replace(/\/$/, "");
+  localStorage.setItem("api_base_url", normalized);
+}
 
 let authToken: string | null = null;
 
@@ -38,7 +47,7 @@ async function request<T>(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${getApiBase()}${path}`, {
     ...options,
     headers,
   });
