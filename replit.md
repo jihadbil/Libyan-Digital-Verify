@@ -1,44 +1,58 @@
-# [Project name]
+# منظومة الهوية الرقمية الليبية
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+نظام إدارة الهوية الرقمية للمواطنين الليبيين — واجهة مشرف لإدارة المواطنين والوثائق والمؤسسات والتحقق من الهوية.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- Frontend: `artifacts/libya-id: web` workflow (Vite, port 18331, preview path `/`)
+- Backend: External API at `https://localhost:7071/` — يُشغّله المستخدم محلياً
 - `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Frontend: React + Vite + Wouter + TanStack Query + shadcn/ui + Tailwind v4
+- Font: IBM Plex Sans Arabic (Google Fonts)
+- Direction: Arabic RTL (`dir="rtl"` on html element)
+- API: Raw fetch client in `artifacts/libya-id/src/lib/api.ts` — no codegen (external API)
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/libya-id/src/lib/api.ts` — كامل عميل API (Auth, Citizens, Institutions, Documents, Verification, Audit, Notifications, InstitutionDocuments)
+- `artifacts/libya-id/src/lib/auth.tsx` — React AuthContext (login/logout/me, token in localStorage)
+- `artifacts/libya-id/src/lib/utils.ts` — formatDate/formatDateTime + all Arabic label/color maps
+- `artifacts/libya-id/src/index.css` — Libyan green/gold theme, IBM Plex Sans Arabic
+- `artifacts/libya-id/src/App.tsx` — Router + providers
+- `artifacts/libya-id/src/components/layout.tsx` — Collapsible sidebar + mobile nav
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- External API at `https://localhost:7071/` — direct raw fetch, no codegen
+- Auth token stored in localStorage as `access_token` / `refresh_token`
+- All UI is Arabic RTL — `direction: rtl` set at html and body level
+- Sidebar collapses to icon-only mode on desktop; slide-over drawer on mobile
+- Each page self-contained with its own TanStack Query hooks
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- **المواطنون**: قائمة، بحث، إضافة، إيقاف، عرض تفاصيل مع الوثائق وطلبات التحقق
+- **المؤسسات**: قائمة بطاقات، إضافة، إيقاف، تجديد مفتاح API
+- **الوثائق**: إصدار، بحث برقم/QR/معرّف المواطن، عرض المنتهية
+- **التحقق**: إنشاء طلبات، موافقة/رفض/إلغاء، فلترة بالحالة
+- **سجل الأحداث**: تصفية بالمواطن/المستخدم/IP/التاريخ/الفشل
+- **الإشعارات**: عرض/قراءة/حذف، إعادة إرسال الفاشلة
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- التطبيق بالكامل باللغة العربية مع دعم RTL
+- الألوان: أخضر ليبي (#2e7d52) وذهبي (#D4A017)
+- الخط: IBM Plex Sans Arabic
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- API يعمل على `https://localhost:7071/` ويجب أن يكون مُشغّلاً محلياً
+- يجب قبول شهادة TLS الخاصة بالـ API قبل استخدام التطبيق (زيارة الرابط مباشرةً في المتصفح)
+- تسجيل الدخول يخزن التوكن في localStorage
 
 ## Pointers
 

@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "منظومة الهوية الرقمية الليبية"
+version = "1.0.0"
+id = "artifacts/libya-id"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18331
+
+[services.development]
+run = "pnpm --filter @workspace/libya-id run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/libya-id", "run", "build" ]
+publicDir = "artifacts/libya-id/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18331"
+BASE_PATH = "/"
