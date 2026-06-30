@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 export default function LoginPage() {
   const { login } = useAuth();
   const { toast } = useToast();
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -26,10 +26,10 @@ export default function LoginPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!username || !password) return;
+    if (!email || !password) return;
     setIsLoading(true);
     try {
-      await login(username, password);
+      await login(email, password);
     } catch (err: unknown) {
       toast({
         title: "خطأ في تسجيل الدخول",
@@ -123,19 +123,19 @@ export default function LoginPage() {
             <CardContent className="pb-6">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="username">اسم المستخدم</Label>
+                  <Label htmlFor="email">البريد الإلكتروني</Label>
                   <div className="relative">
                     <User className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
-                      id="username"
-                      type="text"
-                      placeholder="اسم المستخدم"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
+                      id="email"
+                      type="email"
+                      placeholder="البريد الإلكتروني"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       className="pr-9"
                       dir="ltr"
-                      data-testid="input-username"
-                      autoComplete="username"
+                      data-testid="input-email"
+                      autoComplete="email"
                     />
                   </div>
                 </div>
@@ -167,7 +167,7 @@ export default function LoginPage() {
                 <Button
                   type="submit"
                   className="w-full mt-2"
-                  disabled={isLoading || !username || !password}
+                  disabled={isLoading || !email || !password}
                   data-testid="button-submit-login"
                 >
                   {isLoading ? (

@@ -4,7 +4,7 @@ import type { UserResponse } from "./api";
 export type AuthContextType = {
   user: UserResponse | null;
   isLoading: boolean;
-  login: (username: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 };

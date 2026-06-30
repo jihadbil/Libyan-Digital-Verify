@@ -1,5 +1,5 @@
-const DEFAULT_API_BASE = "http://localhost:7071";
-
+const DEFAULT_API_BASE = "http://localhost:5081";
+//const DEFAULT_API_BASE = "http://digitalidentitymanagementsystem.runasp.net";
 export function getApiBase(): string {
   return localStorage.getItem("api_base_url") || DEFAULT_API_BASE;
 }
@@ -101,7 +101,7 @@ export type AuthResponse = {
 
 export type UserResponse = {
   id: string;
-  username: string;
+  fullName: string;
   email: string;
   userType: string;
   isActive: boolean;
@@ -166,22 +166,21 @@ export type CitizenWithVerifications = {
 export type InstitutionResponse = {
   id: string;
   name: string;
-  institutionType: string;
-  registrationNumber: string;
-  email: string;
-  phoneNumber: string;
+  type: string;
+  contactEmail: string;
+  contactPhone: string;
   address: string;
   isActive: boolean;
-  apiKey: string;
+  apiKeyPrefix: string;
+  apiKey?: string;
   createdAt: string;
 };
 
 export type InstitutionInput = {
   name: string;
-  institutionType: number;
-  registrationNumber: string;
-  email: string;
-  phoneNumber: string;
+  type: number;
+  contactEmail: string;
+  contactPhone: string;
   address: string;
 };
 
@@ -244,8 +243,8 @@ export type DocumentRevision = {
 };
 
 export const authApi = {
-  login: (username: string, password: string) =>
-    post<AuthResponse>("/api/auth/login", { username, password }),
+  login: (email: string, password: string) =>
+    post<AuthResponse>("/api/auth/login", { email, password }),
   register: (data: object) => post<UserResponse>("/api/auth/register", data),
   logout: () => post<void>("/api/auth/logout"),
   me: () => get<UserResponse>("/api/auth/me"),
@@ -272,6 +271,8 @@ export const citizensApi = {
   listActive: () => get<CitizenResponse[]>("/api/Citizens/active"),
   suspend: (id: string, reason: string) =>
     post<void>(`/api/Citizens/${id}/suspend`, { reason }),
+  activate: (id: string) =>
+    post<void>(`/api/Citizens/${id}/activate`),
   revoke: (id: string, reason: string) =>
     post<void>(`/api/Citizens/${id}/revoke`, { reason }),
   bulkImport: (data: CitizenInput[]) =>
@@ -307,6 +308,8 @@ export const institutionsApi = {
     put<InstitutionResponse>(`/api/Institutions/${id}`, data),
   deactivate: (id: string) =>
     post<void>(`/api/Institutions/${id}/deactivate`),
+  activate: (id: string) =>
+    post<void>(`/api/Institutions/${id}/activate`),
   rotateApiKey: (id: string) =>
     post<void>(`/api/Institutions/${id}/rotate-api-key`),
 };

@@ -95,7 +95,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       )}>
         {(!collapsed || mobile) && (
           <div className="px-2 mb-2">
-            <p className="text-xs font-semibold text-sidebar-foreground truncate">{user?.username}</p>
+            <p className="text-xs font-semibold text-sidebar-foreground truncate">{user?.fullName}</p>
             <p className="text-xs text-sidebar-foreground/50 truncate">{user?.email}</p>
           </div>
         )}

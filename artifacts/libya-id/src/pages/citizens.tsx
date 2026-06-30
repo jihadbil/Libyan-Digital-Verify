@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { citizensApi, CitizenInput } from "@/lib/api";
+import { citizensApi, CitizenInput, CitizenResponse } from "@/lib/api";
 import { formatDate, citizenStatusLabels, citizenStatusColors, maritalStatusLabels } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,8 +10,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Eye, UserX, Users } from "lucide-react";
+import { Plus, Search, Eye, UserX, Users, UserCheck, Pencil } from "lucide-react";
 import { Link } from "wouter";
+
+const maritalStatusToNumber: Record<string, number> = {
+  Single: 1,
+  Married: 2,
+  Divorced: 3,
+  Widowed: 4,
+  "1": 1,
+  "2": 2,
+  "3": 3,
+  "4": 4,
+};
 
 const emptyForm: CitizenInput = {
   nationalId: "",
@@ -32,6 +43,10 @@ export default function CitizensPage() {
   const [search, setSearch] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState<CitizenInput>(emptyForm);
+  
+  const [showEdit, setShowEdit] = useState(false);
+  const [selectedCitizen, setSelectedCitizen] = useState<CitizenResponse | null>(null);
+  const [editForm, setEditForm] = useState<CitizenInput>(emptyForm);
 
   const { data: citizens, isLoading } = useQuery({
     queryKey: ["citizens"],
@@ -49,6 +64,21 @@ export default function CitizensPage() {
     onError: (e: Error) => toast({ title: "خطأ", description: e.message, variant: "destructive" }),
   });
 
+  const editMutation = useMutation({
+    mutationFn: (data: CitizenInput) => {
+      if (!selectedCitizen) throw new Error("لم يتم اختيار مواطن");
+      return citizensApi.update(selectedCitizen.id, data);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["citizens"] });
+      setShowEdit(false);
+      setSelectedCitizen(null);
+      setEditForm(emptyForm);
+      toast({ title: "تم تحديث بيانات المواطن بنجاح" });
+    },
+    onError: (e: Error) => toast({ title: "خطأ", description: e.message, variant: "destructive" }),
+  });
+
   const filtered = (citizens ?? []).filter((c) =>
     c.fullName?.toLowerCase().includes(search.toLowerCase()) ||
     c.nationalId?.includes(search) ||
@@ -62,6 +92,15 @@ export default function CitizensPage() {
 
   function setField(k: keyof CitizenInput, v: string | number) {
     setForm((f) => ({ ...f, [k]: v }));
+  }
+
+  function handleEdit(e: React.FormEvent) {
+    e.preventDefault();
+    editMutation.mutate(editForm);
+  }
+
+  function setEditField(k: keyof CitizenInput, v: string | number) {
+    setEditForm((f) => ({ ...f, [k]: v }));
   }
 
   return (
@@ -134,7 +173,31 @@ export default function CitizensPage() {
                               <Eye className="w-4 h-4" />
                             </Button>
                           </Link>
-                          {c.status === "Active" && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-blue-600 hover:text-blue-700"
+                            data-testid={`button-edit-citizen-${c.id}`}
+                            onClick={() => {
+                              setSelectedCitizen(c);
+                              setEditForm({
+                                nationalId: c.nationalId || "",
+                                name: c.name || "",
+                                fatherName: c.fatherName || "",
+                                grandFatherName: c.grandFatherName || "",
+                                lastName: c.lastName || "",
+                                motherName: c.motherName || "",
+                                dateOfBirth: c.dateOfBirth ? c.dateOfBirth.split("T")[0] : "",
+                                placeOfBirth: c.placeOfBirth || "",
+                                phoneNumber: c.phoneNumber || "",
+                                maritalStatus: maritalStatusToNumber[c.maritalStatus] || 1,
+                              });
+                              setShowEdit(true);
+                            }}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          {c.status === "Active" ? (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -152,6 +215,25 @@ export default function CitizensPage() {
                             >
                               <UserX className="w-4 h-4" />
                             </Button>
+                          ) : (
+                            c.status !== "Revoked" && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-green-600 hover:text-green-700"
+                                data-testid={`button-activate-citizen-${c.id}`}
+                                onClick={() => {
+                                  if (confirm("هل أنت متأكد من تفعيل المواطن؟")) {
+                                    citizensApi.activate(c.id).then(() => {
+                                      qc.invalidateQueries({ queryKey: ["citizens"] });
+                                      toast({ title: "تم تفعيل المواطن بنجاح" });
+                                    }).catch((e: Error) => toast({ title: "خطأ", description: e.message, variant: "destructive" }));
+                                  }
+                                }}
+                              >
+                                <UserCheck className="w-4 h-4" />
+                              </Button>
+                            )
                           )}
                         </div>
                       </td>
@@ -238,6 +320,86 @@ export default function CitizensPage() {
               <Button type="button" variant="outline" onClick={() => setShowAdd(false)}>إلغاء</Button>
               <Button type="submit" disabled={addMutation.isPending} data-testid="button-submit-add-citizen">
                 {addMutation.isPending ? "جاري الإضافة..." : "إضافة المواطن"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={showEdit} onOpenChange={setShowEdit}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>تعديل بيانات المواطن</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleEdit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>الرقم الوطني (12 رقم) *</Label>
+                <Input
+                  value={editForm.nationalId}
+                  onChange={(e) => setEditField("nationalId", e.target.value)}
+                  maxLength={12}
+                  minLength={12}
+                  required
+                  dir="ltr"
+                  data-testid="input-edit-national-id"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>الاسم الأول *</Label>
+                <Input value={editForm.name} onChange={(e) => setEditField("name", e.target.value)} required data-testid="input-edit-name" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>اسم الأب *</Label>
+                <Input value={editForm.fatherName} onChange={(e) => setEditField("fatherName", e.target.value)} required data-testid="input-edit-father-name" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>اسم الجد *</Label>
+                <Input value={editForm.grandFatherName} onChange={(e) => setEditField("grandFatherName", e.target.value)} required data-testid="input-edit-grand-father-name" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>اسم العائلة *</Label>
+                <Input value={editForm.lastName} onChange={(e) => setEditField("lastName", e.target.value)} required data-testid="input-edit-last-name" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>اسم الأم *</Label>
+                <Input value={editForm.motherName} onChange={(e) => setEditField("motherName", e.target.value)} required data-testid="input-edit-mother-name" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>تاريخ الميلاد *</Label>
+                <Input type="date" value={editForm.dateOfBirth} onChange={(e) => setEditField("dateOfBirth", e.target.value)} required dir="ltr" data-testid="input-edit-dob" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>مكان الميلاد *</Label>
+                <Input value={editForm.placeOfBirth} onChange={(e) => setEditField("placeOfBirth", e.target.value)} required data-testid="input-edit-place-of-birth" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>رقم الهاتف *</Label>
+                <Input value={editForm.phoneNumber} onChange={(e) => setEditField("phoneNumber", e.target.value)} required dir="ltr" data-testid="input-edit-phone" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>الحالة الاجتماعية *</Label>
+                <Select
+                  value={String(editForm.maritalStatus)}
+                  onValueChange={(v) => setEditField("maritalStatus", Number(v))}
+                >
+                  <SelectTrigger data-testid="select-edit-marital-status">
+                    <SelectValue placeholder="اختر الحالة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">أعزب</SelectItem>
+                    <SelectItem value="2">متزوج</SelectItem>
+                    <SelectItem value="3">مطلق</SelectItem>
+                    <SelectItem value="4">أرمل</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button type="button" variant="outline" onClick={() => setShowEdit(false)}>إلغاء</Button>
+              <Button type="submit" disabled={editMutation.isPending} data-testid="button-submit-edit-citizen">
+                {editMutation.isPending ? "جاري الحفظ..." : "حفظ التغييرات"}
               </Button>
             </DialogFooter>
           </form>

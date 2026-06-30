@@ -65,7 +65,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">
-          مرحباً، {user?.username}
+          مرحباً، {user?.fullName}
         </h1>
         <p className="text-muted-foreground mt-1">
           {userTypeLabels[user?.userType ?? ""] ?? user?.userType} — لوحة التحكم الرئيسية
@@ -245,7 +245,7 @@ export default function DashboardPage() {
                   >
                     <div>
                       <p className="font-medium">{inst.name}</p>
-                      <p className="text-xs text-muted-foreground">{inst.institutionType}</p>
+                      <p className="text-xs text-muted-foreground">{inst.type}</p>
                     </div>
                     <Badge variant={inst.isActive ? "default" : "secondary"}>
                       {inst.isActive ? "نشط" : "غير نشط"}
